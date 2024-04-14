@@ -49,7 +49,7 @@ def dataframe_to_pdf(df, filename, title, numpages=(1, 1), pagesize=(11, 8.5)):
 
 # Load the Excel file that holds the SSL information
 load_dotenv()
-dataframe = pd.read_excel(os.getenv('FILE_PATH')+os.getenv('FILE'), sheet_name=os.getenv('SHEET'))
+dataframe = pd.read_excel(os.getenv('FILE_PATH')+'/'+os.getenv('FILE'), sheet_name=os.getenv('SHEET'))
 print(dataframe)
 #dataframe['Timestamp'] = dataframe['Timestamp'].apply(datetime.strptime, '%m/%d/%y %H:%M:%S')
 dataframe['Confirmed'] = dataframe['Confirmed'].astype(str)
@@ -203,7 +203,7 @@ for email in emails:
         print("Location: ", location)
         if location == "Montgomery":
             input_pdf = os.getenv('MONTGOMERY_SSL')
-            output_pdf = os.getenv('SSL_PATH')+f'{f_name}{l_name}SSL.pdf'
+            output_pdf = os.getenv('SSL_PATH')+'/'+f'{f_name}{l_name}SSL.pdf'
             # Add in the students' name
             moco_form['2'] = f'{l_name}, {f_name}'
 
@@ -250,11 +250,11 @@ for email in emails:
         
         # Create PDF with table of all the events attended by the individual
         export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
-        dataframe_to_pdf(export_df, os.getenv('LOGS_PATH')+f'{f_name}{l_name}EventLog.pdf', f'Logs of Events attended by {f_name} {l_name}')
+        dataframe_to_pdf(export_df, os.getenv('LOGS_PATH')+'/'+f'{f_name}{l_name}EventLog.pdf', f'Logs of Events attended by {f_name} {l_name}')
 
 
         
         # TODO: send out emails with the PDFs
 
 print(dataframe)
-dataframe.to_excel(os.getenv('FILE_PATH')+os.path.splitext(os.getenv("FILE"))[0]+'_PROCESSED.xlsx', sheet_name=os.getenv('SHEET'))
+dataframe.to_excel(os.getenv('FILE_PATH')+'/'+os.path.splitext(os.getenv("FILE"))[0]+'_PROCESSED.xlsx', sheet_name=os.getenv('SHEET'))

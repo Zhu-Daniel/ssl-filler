@@ -14,16 +14,16 @@ A tool to take an Excel file of Tacy Foundation volunteer logs and put the infor
 
 Example contents:
 ```
-FILE_PATH="/path/to/folder/TacyFoundationSSL/SSLSheets/"
+FILE_PATH="/path/to/folder/TacyFoundationSSL/SSLSheets"
 FILE="Tacy_Foundation_SSL_Hours_041324.xlsx"
 SHEET="Form Responses 1"
 MONTGOMERY_SSL="/path/to/folder/TacyFoundationSSL/SSLForms/montgomerySSLsigned.pdf"
-SSL_PATH="/path/to/folder/TacyFoundationSSL/FilledSSL/"
-LOGS_PATH="/path/to/folder/TacyFoundationSSL/SSLEventLogs/"
+SSL_PATH="/path/to/folder/TacyFoundationSSL/FilledSSL"
+LOGS_PATH="/path/to/folder/TacyFoundationSSL/SSLEventLogs"
 ```
-To get the path of a directory, navigate to the desired directory in your terminal and use the command 'pwd'. Be sure to add the appending '/'
+To get the path of a directory, navigate to the desired directory in your terminal and use the command 'pwd'.
 
-3. Populate the directories with the respective files that are needed
+1. Populate the directories with the respective files that are needed
    * blank SSL forms for MONTGOMERY_SSL
    * Excel spreadsheet for FILE_PATH, FILE, and SHEET
-4. Go to root of this project and run "python sslPDF.py"
+2. Go to root of this project and run "python sslPDF.py"
