@@ -1,16 +1,18 @@
 import fillpdf
-from fillpdf import fillpdfs
-# import gspread
-import pandas as pd
+from fillpdf import fillpdfs # for filling pdfs
+
+import numpy as np
+import pandas as pd # for data manipulation
+
 from datetime import datetime
 from dateutil.rrule import *
-from dateutil.relativedelta import *
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-#mport pdfkit as pdf
-import numpy as np
+from dateutil.relativedelta import * # for determining relevant dates for the SSL forms (Montgomery)
+
+import matplotlib.pyplot as plt 
+from matplotlib.backends.backend_pdf import PdfPages # for creating the event logs pdf
+
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv # for pulling information out of .env (for protecting private information)
 
 
 def _draw_as_table(df, pagesize, title):
@@ -49,6 +51,7 @@ def dataframe_to_pdf(df, filename, title, numpages=(1, 1), pagesize=(11, 8.5)):
 
 # Load the Excel file that holds the SSL information
 load_dotenv()
+# Note: os.getenv() will return NoneType if it cannot find the file
 dataframe = pd.read_excel(os.getenv('FILE_PATH')+'/'+os.getenv('FILE'), sheet_name=os.getenv('SHEET'))
 print(dataframe)
 #dataframe['Timestamp'] = dataframe['Timestamp'].apply(datetime.strptime, '%m/%d/%y %H:%M:%S')

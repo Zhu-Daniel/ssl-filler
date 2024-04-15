@@ -14,14 +14,16 @@ A tool to take an Excel file of Tacy Foundation volunteer logs and put the infor
 
 Example contents:
 ```
-FILE_PATH="/path/to/folder/TacyFoundationSSL/SSLSheets"
+FILE_PATH="SSLSheets"
 FILE="Tacy_Foundation_SSL_Hours_041324.xlsx"
 SHEET="Form Responses 1"
-MONTGOMERY_SSL="/path/to/folder/TacyFoundationSSL/SSLForms/montgomerySSLsigned.pdf"
-SSL_PATH="/path/to/folder/TacyFoundationSSL/FilledSSL"
-LOGS_PATH="/path/to/folder/TacyFoundationSSL/SSLEventLogs"
+MONTGOMERY_SSL="SSLForms/montgomerySSLsigned.pdf"
+SSL_PATH="FilledSSL"
+LOGS_PATH="SSLEventLogs"
 ```
-To get the path of a directory, navigate to the desired directory in your terminal and use the command 'pwd'.
+The paths are just the names of the folders that are storing the necessary data.
+To make sure this can be used with Docker, place the folders in the directory the code is stored. If you name them the same as the examples, you will not need to include them in the .gitignore.
+Otherwise, include the different names in the .gitignore to avoid pushing extra files into the repository.
 
 1. Populate the directories with the respective files that are needed
    * blank SSL forms for MONTGOMERY_SSL

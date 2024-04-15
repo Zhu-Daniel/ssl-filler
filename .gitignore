@@ -1,5 +1,4 @@
-.env
-FilledSSL/
-SSLEventLogs/
-SSLForms/
-SSLSheets/
+FilledSSL/*
+SSLEventLogs/*
+SSLForms/*
+SSLSheets/*
