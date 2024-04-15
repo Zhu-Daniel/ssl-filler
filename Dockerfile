@@ -44,11 +44,6 @@ USER appuser
 
 # Copy the source code into the container.
 COPY . .
-# copy the supporting pdfs to the docker build
-#COPY FilledSSL .
-#COPY SSLEventLogs .
-#COPY SSLForms .
-#COPY SSLSheets .
 
 # Before continuing, use root to give it permission to create files in FilledSSL and SSLEventLogs
 USER root
@@ -59,6 +54,10 @@ RUN chown -R appuser:appuser SSLSheets
 
 # Switch to the non-privileged user to run the application.
 USER appuser
+
+RUN pwd && ls && echo "print paths"
+RUN echo $(ls -1)
+RUN echo $(pwd)
 
 # Expose the port that the application listens on.
 EXPOSE 8000

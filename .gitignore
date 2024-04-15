@@ -1,3 +1,4 @@
+.env
 FilledSSL/*
 SSLEventLogs/*
 SSLForms/*

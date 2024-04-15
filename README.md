@@ -21,8 +21,7 @@ MONTGOMERY_SSL="SSLForms/montgomerySSLsigned.pdf"
 SSL_PATH="FilledSSL"
 LOGS_PATH="SSLEventLogs"
 ```
-The paths are just the names of the folders that are storing the necessary data.
-To make sure this can be used with Docker, place the folders in the directory the code is stored. If you name them the same as the examples, you will not need to include them in the .gitignore.
+You can copy the contents to your own .env file, but if you use different folder names or folders in different locations, you will need to update this.
 Otherwise, include the different names in the .gitignore to avoid pushing extra files into the repository.
 
 1. Populate the directories with the respective files that are needed
