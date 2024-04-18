@@ -24,7 +24,13 @@ LOGS_PATH="SSLEventLogs"
 You can copy the contents to your own .env file, but if you use different folder names or folders in different locations, you will need to update this.
 Otherwise, include the different names in the .gitignore to avoid pushing extra files into the repository.
 
-1. Populate the directories with the respective files that are needed
-   * blank SSL forms for MONTGOMERY_SSL
-   * Excel spreadsheet for FILE_PATH, FILE, and SHEET
-2. Go to root of this project and run "python sslPDF.py"
+3. Populate the directories with the respective files that are needed
+  * blank SSL forms for MONTGOMERY_SSL
+  * Excel spreadsheet for FILE_PATH, FILE, and SHEET
+4. If you do not have python installed, install it from this link: [https://www.python.org/downloads/]
+  * Click on the big yellow button near the top of the page
+5. Go to root of this project and run the following commands to install dependencies and then run the program:
+```
+pip install -r requirements.txt
+python sslPDF.py
+```

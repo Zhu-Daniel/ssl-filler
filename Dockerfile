@@ -15,8 +15,16 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Keeps Python from buffering stdout and stderr to avoid situations where
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
+# ENV FILE_PATH="SSLSheets"
+# ENV FILE="Tacy_Foundation_SSL_Hours_041324.xlsx"
+# ENV SHEET="Form Responses 1"
+# ENV MONTGOMERY_SSL="SSLForms/montgomerySSLsigned.pdf"
+# ENV SSL_PATH="FilledSSL"
+# ENV LOGS_PATH="SSLEventLogs"
 
 WORKDIR /app
+
+
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
