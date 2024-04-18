@@ -15,8 +15,7 @@ services:
       - 8000:8000
     # volumes:
     #   - ssl-data:FilledSSL
-    env_file:
-      - ./.env
+    
 # volumes:
 #   ssl-data:
 #     external: true
