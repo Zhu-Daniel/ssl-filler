@@ -56,6 +56,7 @@ print(dataframe)
 #dataframe['Timestamp'] = dataframe['Timestamp'].apply(datetime.strptime, '%m/%d/%y %H:%M:%S')
 dataframe['Confirmed'] = dataframe['Confirmed'].astype(str)
 dataframe.loc[dataframe.Confirmed == "nan", 'Confirmed'] = ""
+dataframe['Hours'] = round(dataframe['Hours'], 2)
 print(dataframe)
 print(dataframe.dtypes)
 

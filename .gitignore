@@ -3,3 +3,4 @@ FilledSSL/*
 SSLEventLogs/*
 SSLForms/*
 SSLSheets/*
+!.gitignore
