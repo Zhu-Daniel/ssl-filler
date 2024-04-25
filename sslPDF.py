@@ -50,17 +50,10 @@ def dataframe_to_pdf(df, filename, title, numpages=(1, 1), pagesize=(11, 8.5)):
             
             plt.close()
 
-# Load the Excel file that holds the SSL information
-dataframe = pd.read_excel(config_params['FILE_PATH']+'/'+config_params['FILE'], sheet_name=config_params['SHEET'])
-print(dataframe)
-#dataframe['Timestamp'] = dataframe['Timestamp'].apply(datetime.strptime, '%m/%d/%y %H:%M:%S')
-dataframe['Confirmed'] = dataframe['Confirmed'].astype(str)
-dataframe.loc[dataframe.Confirmed == "nan", 'Confirmed'] = ""
-dataframe['Hours'] = round(dataframe['Hours'], 2)
-print(dataframe)
-print(dataframe.dtypes)
+### SSL FORMS FOR DIFFERENT COUNTIES:
 
-# Obtained from the get_form_fields function
+## Maryland:
+# Montgomery:
 # Required section is 14-39 + Supervisor Signature
 moco_form = {
              # Section I
@@ -146,7 +139,54 @@ moco_form = {
              # Section III: Student reflection
              '40': ''
             }
+# Howard:
+fillpdfs.print_form_fields(config_params['HOWARD_SSL'])
+how_form = {'Name': '',
+    'School': '',
+    'Grade': '',
+    'Activity': '',
+    'Check Box187': '',
+    'Check Box188': '',
+    'Check Box189': '',
+    'StartDate': '',
+    'FinishDate': '',
+    'SponsoringClassOrganization': 'The Tacy Foundation',
+    'AdultSiteProjectSupervisor': 'Charlotte Holliday',
+    'Phone': '301-916-1439',
+    'Service Hours': '',
+    'd plan serviceactivities': '',
+    'Text181': '',
+    'Advocacyprojectsrequire studentstolendtheirvoicesand talentsand isthe workofcitizenship': '',
+    'Check Box184': '',
+    'Check Box185': '',
+    'Check Box186': '',
+    'Text182': '',
+    'manyforms from essaystosmallgroupdiscussions': '',
+    'Text183': '',
+    'StudentSignature': '',
+    'Date': '',
+    'AdultSiteProjectSupervisorSignature': '',
+    'Date_2': '',
+    'PrincipalDesigneeSignature': '',
+    'Date_3': ''}
+# Georgetown Day School:
 
+# Carroll: No need to do extra, just send volunteer logs to students for them to enter via the online SSL form submitter: https://ext.carrollk12.org/SLHExt/Default.aspx
+
+## Virginia:
+# Fairfax: 
+# Loudoun:
+#exit()
+
+# Load the Excel file that holds the SSL information
+dataframe = pd.read_excel(config_params['FILE_PATH']+'/'+config_params['FILE'], sheet_name=config_params['SHEET'])
+print(dataframe)
+#dataframe['Timestamp'] = dataframe['Timestamp'].apply(datetime.strptime, '%m/%d/%y %H:%M:%S')
+dataframe['Confirmed'] = dataframe['Confirmed'].astype(str)
+dataframe.loc[dataframe.Confirmed == "nan", 'Confirmed'] = ""
+dataframe['Hours'] = round(dataframe['Hours'], 2)
+print(dataframe)
+print(dataframe.dtypes)
 
 
 # TODO: grabbing only the SSL hours within the recommended time frame, or grab all eligible hours?
@@ -180,8 +220,10 @@ print('End of School Year: ', school_year)
 
 
 emails = dataframe['Email'].unique()
-# Column where the "Confirmed" column is
+# Column where the "Confirmed" column is - for tracking what has been signed or not
 confirmed_col = 12
+
+# TODO: How should we name differently when volunteers have the same name? Just use email for the output pdfs?
 
 # Use emails as the partition key
 for email in emails:
@@ -203,14 +245,15 @@ for email in emails:
         # date_format = ["%m/%d/%y %H:%M:%S" for x in email_df.loc[:,'Start Date/Time'].size()]
         # TODO: what if student moves to a different county but still works with the Foundation? Just check last location?
         location = email_df.loc[:,'County'].iloc[-1]
+        output_pdf = config_params['SSL_PATH']+'/'+f'{email}SSL.pdf'
         print("Location: ", location)
         if location == "Montgomery":
             input_pdf = config_params['MONTGOMERY_SSL']
-            output_pdf = config_params['SSL_PATH']+'/'+f'{f_name}{l_name}SSL.pdf'
+            
             # Add in the students' name
             moco_form['2'] = f'{l_name}, {f_name}'
 
-            # Calculate which time period this form will be - uses current date along with dead lines
+            # Calculate which time period this form will be - uses current date along with deadlines
             
             start_date=""
             end_date=""
@@ -243,7 +286,26 @@ for email in emails:
             fillpdfs.write_fillable_pdf(input_pdf,output_pdf,moco_form)
             print(f"SSL PDF for {f_name}{l_name} from Montgomery created")
         elif location == "Howard":
-            print(f"SSL PDF for {f_name}{l_name} from Howard to be created")
+            
+            input_pdf = config_params['HOWARD_SSL']
+
+            # Add in the students' name
+            how_form['Name'] = f'{f_name} {l_name}'
+
+            # calculate start date based on the earliest date in the list
+            vol_dates = [x.strftime("%m/%d/%Y") for x in email_df['Start Date']]
+
+            start_date=min(vol_dates)
+            end_date=today.strftime("%m/%d/%Y")
+            how_form['StartDate'] = start_date
+            how_form['FinishDate'] = end_date
+
+            # Enter the number of hours earned
+            how_form['Service Hours'] = total_ssl
+            # Enter today's date
+            how_form['Date_2'] = today.strftime("%m/%d/%Y")
+            fillpdfs.write_fillable_pdf(input_pdf,output_pdf,how_form)
+            print(f"SSL PDF for {f_name}{l_name} from Howard created")
         else:
             print(f"Don't have SSL PDF creation set up for {location}")
         
@@ -253,7 +315,7 @@ for email in emails:
         
         # Create PDF with table of all the events attended by the individual
         export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
-        dataframe_to_pdf(export_df, config_params['LOGS_PATH']+'/'+f'{f_name}{l_name}EventLog.pdf', f'Logs of Events attended by {f_name} {l_name}')
+        dataframe_to_pdf(export_df, config_params['LOGS_PATH']+'/'+f'{email}EventLog.pdf', f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
 
 
         
