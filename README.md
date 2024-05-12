@@ -6,8 +6,8 @@ A tool to take an Excel file of Tacy Foundation volunteer logs and put the infor
 2. Populate the directories with the respective files that are needed:
   * blank SSL forms should be placed in **SSLForms**
   * Excel spreadsheet with data should be put into **SSLSheets**
-3. Install Docker at [https://docs.docker.com/engine/install/], following the instructions there 
-4. Pull the Docker image: ```docker push danmartmi/ssl-filler```
+3. Install Docker at https://docs.docker.com/engine/install/, following the instructions there 
+4. Pull the Docker image: ```docker pull danmartmi/ssl-filler```
 5. Run the Docker command to run the code: 
    * Mac: ```docker run --rm -it -v $(pwd):/mnt -w /mnt danmartmi/ssl-filler```
    * Windows: ```docker run --rm -it -v %cd%:/mnt -w /mnt danmartmi/ssl-filler```
