@@ -71,4 +71,6 @@ RUN echo $(pwd)
 EXPOSE 8000
 
 # Run the application.
+# CMD python sslPDF.py
+
 CMD python sslPDF.py

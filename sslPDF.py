@@ -20,7 +20,9 @@ from dotenv import load_dotenv  # for accessing environment variables
 import smtplib
 
 # Import the email modules we'll need
+import email
 from email.message import EmailMessage
+from email.mime.application import MIMEApplication
 
 # Security for email - TLS encryption
 import ssl
@@ -30,6 +32,13 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+# For copy pasting the SSL forms to save them
+import shutil
+
+# for testing out other pdf editors that can save the pdf generated
+from pypdf import PdfReader
+from pypdf import PdfWriter
 
 load_dotenv() # load environment variables
 
@@ -240,22 +249,22 @@ school_year = list(rrule(freq=YEARLY, dtstart=datetime(base_year, 6, 1), bymonth
 print('End of School Year: ', school_year)
 
 
-emails = dataframe['Email'].unique()
+v_emails = dataframe['Email'].unique()
 # Column where the "Confirmed" column is - for tracking what has been signed or not
 confirmed_col = 12
 
 # TODO: How should we name differently when volunteers have the same name? Just use email for the output pdfs?
 
 # Use emails as the partition key
-for email in emails:
-    print(f"Processing {email}")
-    email_df = dataframe.loc[(dataframe['Email']==email) & (dataframe['SSL eligible?'] == True) & (dataframe['Confirmed']=="")]
+for e in v_emails:
+    print(f"Processing {e}")
+    email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['SSL eligible?'] == True) & (dataframe['Confirmed']=="")]
     rows = email_df.index
     eligible = email_df.loc[:,'SSL eligible?'].to_numpy()
     # Checks to see if the student is ever eligible or becomes eligible
     # Commented section for case where individual student wants an SSL form, but you don't want to run the program for everyone
     if True in eligible: # and email == "<email>":
-        print(f"Creating SSL form for {email}")
+        print(f"Creating SSL form for {e}")
         # TODO: only add up the hours which SSL is applicable and not confirmed
         total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
         f_name = email_df.loc[:,'First Name'].to_numpy()[0]
@@ -266,7 +275,7 @@ for email in emails:
         # date_format = ["%m/%d/%y %H:%M:%S" for x in email_df.loc[:,'Start Date/Time'].size()]
         # TODO: what if student moves to a different county but still works with the Foundation? Just check last location?
         location = email_df.loc[:,'County'].iloc[-1]
-        output_pdf = config_params['SSL_PATH']+'/'+f'{email}SSL.pdf'
+        output_pdf = config_params['SSL_PATH']+'/'+f'{e}SSL.pdf'
         print("Location: ", location)
         if location == "Montgomery":
             input_pdf = config_params['MONTGOMERY_SSL']
@@ -304,8 +313,26 @@ for email in emails:
             moco_form['37'] = today.month
             moco_form['38'] = today.day
             moco_form['39'] = today.year
-            fillpdfs.write_fillable_pdf(input_pdf,output_pdf,moco_form)
-            print(f"SSL PDF for {f_name}{l_name} from Montgomery created")
+            # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,moco_form)
+
+            reader = PdfReader(input_pdf)
+            writer = PdfWriter()
+
+            page = reader.pages[0]
+            fields = reader.get_fields()
+
+            writer.append(reader)
+
+            writer.update_page_form_field_values(
+                writer.pages[0],
+                moco_form,
+                auto_regenerate=False,
+            )
+
+            with open(output_pdf, "wb") as output_stream:
+                writer.write(output_stream)
+            
+            print(f"SSL PDF for {f_name} {l_name} from Montgomery created")
         elif location == "Howard":
             
             input_pdf = config_params['HOWARD_SSL']
@@ -325,8 +352,26 @@ for email in emails:
             how_form['Service Hours'] = total_ssl
             # Enter today's date
             how_form['Date_2'] = today.strftime("%m/%d/%Y")
-            fillpdfs.write_fillable_pdf(input_pdf,output_pdf,how_form)
-            print(f"SSL PDF for {f_name}{l_name} from Howard created")
+            # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,how_form)
+
+            reader = PdfReader(input_pdf)
+            writer = PdfWriter()
+
+            page = reader.pages[0]
+            fields = reader.get_fields()
+
+            writer.append(reader)
+
+            writer.update_page_form_field_values(
+                writer.pages[0],
+                how_form,
+                auto_regenerate=False,
+            )
+
+            with open(output_pdf, "wb") as output_stream:
+                writer.write(output_stream)
+            
+            print(f"SSL PDF for {f_name} {l_name} from Howard created")
         else:
             print(f"Don't have SSL PDF creation set up for {location}")
         
@@ -336,66 +381,73 @@ for email in emails:
         
         # Create PDF with table of all the events attended by the individual
         export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
-        log_name = config_params['LOGS_PATH']+'/'+f'{email}EventLog.pdf'
+        log_name = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
         dataframe_to_pdf(export_df, log_name, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
         
-        # TODO: send out emails with the PDFs
+        # Define values to be used in email
+        text = f"""
+        Hi {f_name} {l_name},
+
+        Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
+
+        Best,
+
+        SSL Manager
+        """
+        sender = "bernardhardy365@gmail.com"
+        password = os.getenv('PASSWORD')
+        receiver = e
+
+        # Setting up the message
+        msg = EmailMessage()
+
+        msg['Subject'] = f'Tacy Foundation SSL Hours'
+        msg['From'] = sender
+        msg['To'] = receiver
+        msg['Bcc'] = receiver
+
+        # msg.attach(MIMEText(text, "plain"))
+        msg.set_content(text)
+
+        # TODO: pdfs are somehow not being saved
+        base_name, _ = os.path.splitext(output_pdf)
+        new_output = base_name + "." + "pdf"
+        shutil.move(output_pdf, new_output)
+        ssl_form = new_output
+        
+        ssl_logs = log_name
+
+        files = [ssl_form, ssl_logs]
+        # Loop through files to include in the email
+        for f in files:
+            # Open PDF file in binary mode
+            with open(f, "rb") as attachment:
+                # Add file as application/octet-stream
+                # Email client can usually download this automatically as attachment
+                # part = email.mime.application.MIMEApplication(f.read(),_subtype="pdf")
+                # part = MIMEBase("application", "octet-stream")
+                # part.set_payload(attachment.read())
+                # part = MIMEApplication(attachment.read(),_subtype="pdf")
+                msg.add_attachment(attachment.read(), maintype='application', subtype='octet-stream', filename=attachment.name)
+            # Encode file in ASCII characters to send by email    
+            # encoders.encode_base64(part)
+            # Add header as key/value pair to attachment part
+            # part.add_header(
+            #     "Content-Disposition",
+            #     f"attachment; filename= {f}",
+            # )
+            # msg.attach(part)
+
+        context = ssl.create_default_context()
+
+        # Send the message via our own SMTP server.
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+            smtp.login(sender, password)
+            smtp.sendmail(sender, receiver, msg.as_string())
+            smtp.quit()
 
         
 
 print(dataframe)
 # Create excel file to confirm which ones have been processed or not
 dataframe.to_excel(config_params['FILE_PATH']+'/'+config_params['FILE'].split('.')[0]+'_PROCESSED.xlsx', sheet_name=config_params['SHEET'])
-
-# Define values to be used in email
-text = f"""
-Hi Volunteer,
-
-Here are your SSL hours.
-
-Best,
-
-SSL Manager
-"""
-sender = "bernardhardy365@gmail.com"
-password = os.getenv('PASSWORD')
-receiver = "zhudaniel322@gmail.com"
-
-# Setting up the message
-msg = MIMEMultipart()
-
-msg['Subject'] = f'Tacy Foundation SSL Hours'
-msg['From'] = sender
-msg['To'] = receiver
-msg['Bcc'] = receiver
-
-msg.attach(MIMEText(text, "plain"))
-
-ssl_form = "README.Docker.md"
-ssl_logs = "README.md"
-
-files = [ssl_form, ssl_logs]
-# Loop through files to include in the email
-for f in files:
-    # Open PDF file in binary mode
-    with open(f, "rb") as attachment:
-        # Add file as application/octet-stream
-        # Email client can usually download this automatically as attachment
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(attachment.read())
-    # Encode file in ASCII characters to send by email    
-    encoders.encode_base64(part)
-    # Add header as key/value pair to attachment part
-    part.add_header(
-        "Content-Disposition",
-        f"attachment; filename= {f}",
-    )
-    msg.attach(part)
-
-context = ssl.create_default_context()
-
-# Send the message via our own SMTP server.
-with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
-    smtp.login(sender, password)
-    smtp.sendmail(sender, receiver, msg.as_string())
-    smtp.quit()
