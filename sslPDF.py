@@ -13,16 +13,23 @@ from matplotlib.backends.backend_pdf import PdfPages # for creating the event lo
 
 import yaml # for loading the configurations related to the locations of the template pdfs
 
-import hashlib
-import mailchimp_marketing
-from mailchimp_marketing.api_client import ApiClientError
-from mailchimp_marketing import Client # for sending emails with mailchimp
-
 import os
 from dotenv import load_dotenv  # for accessing environment variables
 
-import base64 # for encoding files in emails
-import mimetypes
+# Import smtplib for the actual sending function
+import smtplib
+
+# Import the email modules we'll need
+from email.message import EmailMessage
+
+# Security for email - TLS encryption
+import ssl
+
+# For emailing files
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 load_dotenv() # load environment variables
 
@@ -192,15 +199,6 @@ how_form = {'Name': '',
 #exit()
 
 
-# Mailchimp setup
-mailchimp = Client()
-LIST_ID = os.getenv("AUDIENCE_ID")
-SSL_TAG = os.getenv("SSL_TAG_ID")
-mailchimp.set_config({
-  "api_key": os.getenv("API_KEY"),
-  "server": os.getenv("MAILCHIMP_PREFIX")
-})
-
 # Load the Excel file that holds the SSL information
 dataframe = pd.read_excel(config_params['FILE_PATH']+'/'+config_params['FILE'], sheet_name=config_params['SHEET'])
 print(dataframe)
@@ -343,54 +341,61 @@ for email in emails:
         
         # TODO: send out emails with the PDFs
 
-        # Define your email content
-        message = {
-            "subject": "SSL Forms + Event Logs",
-            "from_email": "thetacyfoundation@gmail.com",
-            "from_name": "The Tacy Foundation",
-            "to": [{"email": email}],
-            "html": f"<p>Hello {f_name} {l_name}, here is your SSL Form(s) and event log. If you have any questions or concerns, please email thetacyfoundation@gmail.com.</p>"
-        }
-
-        # Add attachments
-        attachments = [
-            {"filename": output_pdf, "content": "base64_encoded_content"},
-            {"filename": log_name, "content": "base64_encoded_content"}
-        ]
-
-        # Base64 encode the files
-        for attachment in attachments:
-            with open(attachment["filename"], "rb") as file:
-                content = base64.b64encode(file.read()).decode("utf-8")
-                attachment["content"] = content
-
-        # Add attachments to the message
-        message["attachments"] = attachments
-
-        try:
-            # Send the email
-            response = mailchimp.campaigns.send({"message": message})
-            print("Email sent successfully!")
-            print(response)
-        except ApiClientError as error:
-            print("An error occurred:", error.text)
+        
 
 print(dataframe)
 # Create excel file to confirm which ones have been processed or not
 dataframe.to_excel(config_params['FILE_PATH']+'/'+config_params['FILE'].split('.')[0]+'_PROCESSED.xlsx', sheet_name=config_params['SHEET'])
 
+# Define values to be used in email
+text = f"""
+Hi Volunteer,
 
-# Mailchimp testing
-response = mailchimp.ping.get()
-print(response)
+Here are your SSL hours.
 
+Best,
 
-# EMAIL = "zhudaniel322@gmail.com"
+SSL Manager
+"""
+sender = "bernardhardy365@gmail.com"
+password = os.getenv('PASSWORD')
+receiver = "zhudaniel322@gmail.com"
 
-# SUBSCRIBER_HASH = hashlib.md5(EMAIL.encode('utf-8')).hexdigest()
+# Setting up the message
+msg = MIMEMultipart()
 
-# try:
-#     response = mailchimp.lists.get_list_member_tags(LIST_ID, SUBSCRIBER_HASH)
-#     print("client.ping.get() response: {}".format(response))
-# except ApiClientError as error:
-#     print("An exception occurred: {}".format(error.text))
+msg['Subject'] = f'Tacy Foundation SSL Hours'
+msg['From'] = sender
+msg['To'] = receiver
+msg['Bcc'] = receiver
+
+msg.attach(MIMEText(text, "plain"))
+
+ssl_form = "README.Docker.md"
+ssl_logs = "README.md"
+
+files = [ssl_form, ssl_logs]
+# Loop through files to include in the email
+for f in files:
+    # Open PDF file in binary mode
+    with open(f, "rb") as attachment:
+        # Add file as application/octet-stream
+        # Email client can usually download this automatically as attachment
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(attachment.read())
+    # Encode file in ASCII characters to send by email    
+    encoders.encode_base64(part)
+    # Add header as key/value pair to attachment part
+    part.add_header(
+        "Content-Disposition",
+        f"attachment; filename= {f}",
+    )
+    msg.attach(part)
+
+context = ssl.create_default_context()
+
+# Send the message via our own SMTP server.
+with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+    smtp.login(sender, password)
+    smtp.sendmail(sender, receiver, msg.as_string())
+    smtp.quit()
