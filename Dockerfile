@@ -47,6 +47,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install -r requirements.txt
 
 
+RUN apt-get -y update
+RUN apt-get -y install git
+RUN pip install git+https://github.com/py-pdf/pypdf.git
+
 # Switch to the non-privileged user to run the application.
 USER appuser
 

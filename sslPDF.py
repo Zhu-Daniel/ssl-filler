@@ -179,9 +179,9 @@ how_form = {'Name': '',
     'Check Box189': '',
     'StartDate': '',
     'FinishDate': '',
-    'SponsoringClassOrganization': 'The Tacy Foundation',
-    'AdultSiteProjectSupervisor': 'Charlotte Holliday',
-    'Phone': '301-916-1439',
+    'SponsoringClassOrganization': ('The Tacy Foundation', '/F1', 8),
+    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '/F1', 8),
+    'Phone': ('301-916-1439', '/F1', 8),
     'Service Hours': '',
     'd plan serviceactivities': '',
     'Text181': '',
@@ -338,20 +338,20 @@ for e in v_emails:
             input_pdf = config_params['HOWARD_SSL']
 
             # Add in the students' name
-            how_form['Name'] = f'{f_name} {l_name}'
+            how_form['Name'] = tuple((f'{f_name} {l_name}', '/F1', 8))
 
             # calculate start date based on the earliest date in the list
             vol_dates = [x.strftime("%m/%d/%Y") for x in email_df['Start Date']]
 
             start_date=min(vol_dates)
             end_date=today.strftime("%m/%d/%Y")
-            how_form['StartDate'] = start_date
-            how_form['FinishDate'] = end_date
-
+            how_form['StartDate'] = tuple((start_date, '/F1', 8))
+            how_form['FinishDate'] = tuple((end_date, '/F1', 8))
+            print(isinstance(how_form['FinishDate'], tuple))
             # Enter the number of hours earned
-            how_form['Service Hours'] = total_ssl
+            how_form['Service Hours'] = tuple((total_ssl, '/F1', 8))
             # Enter today's date
-            how_form['Date_2'] = today.strftime("%m/%d/%Y")
+            how_form['Date_2'] = tuple((today.strftime("%m/%d/%Y"), '/F1', 8))
             # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,how_form)
 
             reader = PdfReader(input_pdf)
@@ -359,6 +359,7 @@ for e in v_emails:
 
             page = reader.pages[0]
             fields = reader.get_fields()
+            print(fields)
 
             writer.append(reader)
 
@@ -410,10 +411,10 @@ for e in v_emails:
         msg.set_content(text)
 
         # TODO: pdfs are somehow not being saved
-        base_name, _ = os.path.splitext(output_pdf)
-        new_output = base_name + "." + "pdf"
-        shutil.move(output_pdf, new_output)
-        ssl_form = new_output
+        # base_name, _ = os.path.splitext(output_pdf)
+        # new_output = base_name + "." + "pdf"
+        # shutil.move(output_pdf, new_output)
+        ssl_form = output_pdf
         
         ssl_logs = log_name
 
