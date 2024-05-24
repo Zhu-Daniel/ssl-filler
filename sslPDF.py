@@ -23,6 +23,7 @@ import smtplib
 import email
 from email.message import EmailMessage
 from email.mime.application import MIMEApplication
+from email.utils import make_msgid
 
 # Security for email - TLS encryption
 import ssl
@@ -179,9 +180,9 @@ how_form = {'Name': '',
     'Check Box189': '',
     'StartDate': '',
     'FinishDate': '',
-    'SponsoringClassOrganization': ('The Tacy Foundation', '/F1', 8),
-    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '/F1', 8),
-    'Phone': ('301-916-1439', '/F1', 8),
+    'SponsoringClassOrganization': ('The Tacy Foundation', '/Ff', 8),
+    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '/Ff', 8),
+    'Phone': ('301-916-1439', '/Ff', 8),
     'Service Hours': '',
     'd plan serviceactivities': '',
     'Text181': '',
@@ -339,20 +340,20 @@ for e in v_emails:
             input_pdf = config_params['HOWARD_SSL']
 
             # Add in the students' name
-            how_form['Name'] = tuple((f'{f_name} {l_name}', '/F1', 8))
+            how_form['Name'] = tuple((f'{f_name} {l_name}', '/Ff', 8))
 
             # calculate start date based on the earliest date in the list
             vol_dates = [x.strftime("%m/%d/%Y") for x in email_df['Start Date']]
 
             start_date=min(vol_dates)
             end_date=today.strftime("%m/%d/%Y")
-            how_form['StartDate'] = tuple((start_date, '/F1', 8))
-            how_form['FinishDate'] = tuple((end_date, '/F1', 8))
+            how_form['StartDate'] = tuple((start_date, '/Ff', 8))
+            how_form['FinishDate'] = tuple((end_date, '/Ff', 8))
             print(isinstance(how_form['FinishDate'], tuple))
             # Enter the number of hours earned
-            how_form['Service Hours'] = tuple((total_ssl, '/F1', 8))
+            how_form['Service Hours'] = tuple((total_ssl, '/Ff', 8))
             # Enter today's date
-            how_form['Date_2'] = tuple((today.strftime("%m/%d/%Y"), '/F1', 8))
+            how_form['Date_2'] = tuple((today.strftime("%m/%d/%Y"), '/Ff', 8))
             # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,how_form)
 
             reader = PdfReader(input_pdf)
@@ -401,14 +402,15 @@ for e in v_emails:
         receiver = e
 
         # Setting up the message
-        msg = EmailMessage()
+        msg = MIMEMultipart()
 
         msg['Subject'] = f'Tacy Foundation SSL Hours'
         msg['From'] = sender
         msg['To'] = receiver
         msg['Bcc'] = receiver
+        msg['Message-ID'] = make_msgid()
 
-        msg.set_content(text)
+        msg.attach(MIMEText(text, "plain"))
 
         ssl_form = output_pdf
         
@@ -421,7 +423,20 @@ for e in v_emails:
             with open(f, "rb") as attachment:
                 # Add file as application/octet-stream
                 # Email client can usually download this automatically as attachment
-                msg.add_attachment(attachment.read(), maintype='application', subtype='octet-stream', filename=attachment.name)
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+
+            # Encode file in ASCII characters to send by email    
+            encoders.encode_base64(part)
+
+            # Add header as key/value pair to attachment part
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename= {output_pdf}",
+            )
+
+            # Add attachment to message and convert message to string
+            msg.attach(part)
 
         context = ssl.create_default_context()
 
