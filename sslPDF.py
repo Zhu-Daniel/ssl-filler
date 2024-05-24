@@ -263,7 +263,7 @@ for e in v_emails:
     eligible = email_df.loc[:,'SSL eligible?'].to_numpy()
     # Checks to see if the student is ever eligible or becomes eligible
     # Commented section for case where individual student wants an SSL form, but you don't want to run the program for everyone
-    if True in eligible: # and email == "<email>":
+    if True in eligible:
         print(f"Creating SSL form for {e}")
         # TODO: only add up the hours which SSL is applicable and not confirmed
         total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
@@ -315,6 +315,7 @@ for e in v_emails:
             moco_form['39'] = today.year
             # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,moco_form)
 
+            # Generate the PDFs
             reader = PdfReader(input_pdf)
             writer = PdfWriter()
 
@@ -407,13 +408,8 @@ for e in v_emails:
         msg['To'] = receiver
         msg['Bcc'] = receiver
 
-        # msg.attach(MIMEText(text, "plain"))
         msg.set_content(text)
 
-        # TODO: pdfs are somehow not being saved
-        # base_name, _ = os.path.splitext(output_pdf)
-        # new_output = base_name + "." + "pdf"
-        # shutil.move(output_pdf, new_output)
         ssl_form = output_pdf
         
         ssl_logs = log_name
@@ -425,19 +421,7 @@ for e in v_emails:
             with open(f, "rb") as attachment:
                 # Add file as application/octet-stream
                 # Email client can usually download this automatically as attachment
-                # part = email.mime.application.MIMEApplication(f.read(),_subtype="pdf")
-                # part = MIMEBase("application", "octet-stream")
-                # part.set_payload(attachment.read())
-                # part = MIMEApplication(attachment.read(),_subtype="pdf")
                 msg.add_attachment(attachment.read(), maintype='application', subtype='octet-stream', filename=attachment.name)
-            # Encode file in ASCII characters to send by email    
-            # encoders.encode_base64(part)
-            # Add header as key/value pair to attachment part
-            # part.add_header(
-            #     "Content-Disposition",
-            #     f"attachment; filename= {f}",
-            # )
-            # msg.attach(part)
 
         context = ssl.create_default_context()
 
