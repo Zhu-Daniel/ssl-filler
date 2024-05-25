@@ -180,9 +180,9 @@ how_form = {'Name': '',
     'Check Box189': '',
     'StartDate': '',
     'FinishDate': '',
-    'SponsoringClassOrganization': ('The Tacy Foundation', '/Ff', 8),
-    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '/Ff', 8),
-    'Phone': ('301-916-1439', '/Ff', 8),
+    'SponsoringClassOrganization': ('The Tacy Foundation', '', 8),
+    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '', 8),
+    'Phone': ('301-916-1439', '', 8),
     'Service Hours': '',
     'd plan serviceactivities': '',
     'Text181': '',
@@ -340,20 +340,19 @@ for e in v_emails:
             input_pdf = config_params['HOWARD_SSL']
 
             # Add in the students' name
-            how_form['Name'] = tuple((f'{f_name} {l_name}', '/Ff', 8))
+            how_form['Name'] = (f'{f_name} {l_name}', '', 8)
 
             # calculate start date based on the earliest date in the list
             vol_dates = [x.strftime("%m/%d/%Y") for x in email_df['Start Date']]
 
             start_date=min(vol_dates)
             end_date=today.strftime("%m/%d/%Y")
-            how_form['StartDate'] = tuple((start_date, '/Ff', 8))
-            how_form['FinishDate'] = tuple((end_date, '/Ff', 8))
-            print(isinstance(how_form['FinishDate'], tuple))
+            how_form['StartDate'] = tuple((start_date, '', 8))
+            how_form['FinishDate'] = tuple((end_date, '', 8))
             # Enter the number of hours earned
-            how_form['Service Hours'] = tuple((total_ssl, '/Ff', 8))
+            how_form['Service Hours'] = tuple((total_ssl, '', 8))
             # Enter today's date
-            how_form['Date_2'] = tuple((today.strftime("%m/%d/%Y"), '/Ff', 8))
+            how_form['Date_2'] = tuple((today.strftime("%m/%d/%Y"), '', 8))
             # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,how_form)
 
             reader = PdfReader(input_pdf)
@@ -361,7 +360,7 @@ for e in v_emails:
 
             page = reader.pages[0]
             fields = reader.get_fields()
-            print(fields)
+            # print(fields)
 
             writer.append(reader)
 
@@ -377,75 +376,81 @@ for e in v_emails:
             print(f"SSL PDF for {f_name} {l_name} from Howard created")
         else:
             print(f"Don't have SSL PDF creation set up for {location}")
-        
-        # Edits spreadsheet - marks all the rows used in the calculation with "signed"
-        for r in rows:
-            dataframe.at[r, "Confirmed"]="signed"
-        
-        # Create PDF with table of all the events attended by the individual
-        export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
-        log_name = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
-        dataframe_to_pdf(export_df, log_name, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
-        
-        # Define values to be used in email
-        text = f"""
-        Hi {f_name} {l_name},
+    
+    # Runs this regardless of whether or not they are eligible for SSL - mark their hours as signed and generated logs + email for them
+    # Create PDF with table of all the events attended by the individual
+    # When generating Event Logs, include non-SSL-eligible data.
+    email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
+    total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
+    f_name = email_df.loc[:,'First Name'].to_numpy()[0]
+    l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
+    export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
+    log_name = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
+    dataframe_to_pdf(export_df, log_name, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
+    print(f"Create logs for {f_name} {l_name}")
 
-        Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
+    # Define values to be used in email
+    text = f"""
+    Hi {f_name} {l_name},
 
-        Best,
+    Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
 
-        SSL Manager
-        """
-        sender = "bernardhardy365@gmail.com"
-        password = os.getenv('PASSWORD')
-        receiver = e
+    Best,
 
-        # Setting up the message
-        msg = MIMEMultipart()
+    SSL Manager
+    """
+    sender = config_params["SENDER"]
+    password = os.getenv('PASSWORD')
+    receiver = e
 
-        msg['Subject'] = f'Tacy Foundation SSL Hours'
-        msg['From'] = sender
-        msg['To'] = receiver
-        msg['Bcc'] = receiver
-        msg['Message-ID'] = make_msgid()
+    # Setting up the message
+    msg = MIMEMultipart()
 
-        msg.attach(MIMEText(text, "plain"))
+    msg['Subject'] = f'Tacy Foundation SSL Hours'
+    msg['From'] = sender
+    msg['To'] = receiver
+    msg['Bcc'] = receiver
+    msg['Message-ID'] = make_msgid()
 
-        ssl_form = output_pdf
-        
-        ssl_logs = log_name
+    msg.attach(MIMEText(text, "plain"))
+    
+    ssl_logs = log_name
 
-        files = [ssl_form, ssl_logs]
-        # Loop through files to include in the email
-        for f in files:
-            # Open PDF file in binary mode
-            with open(f, "rb") as attachment:
-                # Add file as application/octet-stream
-                # Email client can usually download this automatically as attachment
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(attachment.read())
+    files = [ssl_logs]
+    if True in eligible:
+        files.append(output_pdf)
+    # Loop through files to include in the email
+    for f in files:
+        # Open PDF file in binary mode
+        with open(f, "rb") as attachment:
+            # Add file as application/octet-stream
+            # Email client can usually download this automatically as attachment
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment.read())
 
-            # Encode file in ASCII characters to send by email    
-            encoders.encode_base64(part)
+        # Encode file in ASCII characters to send by email    
+        encoders.encode_base64(part)
 
-            # Add header as key/value pair to attachment part
-            part.add_header(
-                "Content-Disposition",
-                f"attachment; filename= {output_pdf}",
-            )
+        # Add header as key/value pair to attachment part
+        part.add_header(
+            "Content-Disposition",
+            f"attachment; filename= {output_pdf}",
+        )
 
-            # Add attachment to message and convert message to string
-            msg.attach(part)
+        # Add attachment to message and convert message to string
+        msg.attach(part)
 
-        context = ssl.create_default_context()
+    context = ssl.create_default_context()
 
-        # Send the message via our own SMTP server.
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
-            smtp.login(sender, password)
-            smtp.sendmail(sender, receiver, msg.as_string())
-            smtp.quit()
+    # Send the message via our own SMTP server.
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+        smtp.login(sender, password)
+        smtp.sendmail(sender, receiver, msg.as_string())
+        smtp.quit()
 
+    # Edits spreadsheet - marks all the rows used in the calculation with "signed"
+    for r in rows:
+        dataframe.at[r, "Confirmed"]="signed"
         
 
 print(dataframe)

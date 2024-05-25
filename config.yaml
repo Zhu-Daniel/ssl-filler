@@ -1,8 +1,9 @@
 FILE_PATH: SSLSheets
-FILE: Tacy_Foundation_SSL_Hours_052424.xlsx
+FILE: Tacy_Foundation_SSL_Hours_052524.xlsx
 SHEET: Form Responses 1
 MONTGOMERY_SSL: SSLForms/montgomerySSLsigned.pdf
 CARROLL_SSL: SSLForms/carrollSSL.pdf
 HOWARD_SSL: SSLForms/howardSSLsigned.pdf
 SSL_PATH: FilledSSL
 LOGS_PATH: SSLEventLogs
+SENDER: bernardhardy365@gmail.com
