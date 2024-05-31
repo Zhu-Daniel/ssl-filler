@@ -1,5 +1,5 @@
-import fillpdf
-from fillpdf import fillpdfs # for filling pdfs
+# import fillpdf
+# from fillpdf import fillpdfs # for filling pdfs
 
 import numpy as np
 import pandas as pd # for data manipulation
@@ -83,6 +83,82 @@ def dataframe_to_pdf(df, filename, title, numpages=(1, 1), pagesize=(11, 8.5)):
 ### SSL FORMS FOR DIFFERENT COUNTIES:
 
 ## Maryland:
+
+# Charles E Smith Jewish Day School 
+# TODO: SSL doesn't have any forms that can be filled out - use annotations
+
+# reader = PdfReader(config_params["CHARLES_SSL"])
+# fields = reader.get_fields()
+# print(fields)
+# page = reader.pages[0]
+# writer = PdfWriter()
+# writer.add_page(page)
+# from pypdf.annotations import FreeText
+# # Create the annotation and add it
+# annotation = FreeText(
+#     text="Hello World!",
+#     # rect=(110, 635, 160, 645),
+#     # First number is the left border, second number is the top border, third number is the right border, fourth number is the bottom border
+#     # Decrease 1&3 to shift to the left, 2&4 to go down
+#     # Units is probably pixels
+#     rect=(110, 258, 160, 268),
+#     font="Arial",
+#     # bold=True,
+#     # italic=True,
+#     font_size="8pt",
+#     # font_color="00ff00",
+#     border_color="ffffff",
+#     # background_color="cdcdcd",
+# )
+# writer.add_annotation(page_number=0, annotation=annotation)
+
+# # Write the annotated file to disk
+# with open("annotated-pdf.pdf", "wb") as fp:
+#     writer.write(fp)
+# Carroll: No need to do extra, just send volunteer logs to students for them to enter via the online SSL form submitter: https://ext.carrollk12.org/SLHExt/Default.aspx
+# TODO: consider using PDF annotations to manually put information in, should do this if going to do it for other schools
+
+
+# Frederick:
+# TODO: SSL doesn't have any forms that can be filled out - use annotations
+# No way to give feedback earlier
+# reader = PdfReader(config_params["FREDERICK_SSL"])
+# fields = reader.get_fields()
+# print(fields)
+
+# Georgetown Day School:
+
+# Howard:
+how_form = {'Name': '',
+    'School': '',
+    'Grade': '',
+    'Activity': '',
+    'Check Box187': '',
+    'Check Box188': '',
+    'Check Box189': '',
+    'StartDate': '',
+    'FinishDate': '',
+    'SponsoringClassOrganization': ('The Tacy Foundation', '', 8),
+    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '', 8),
+    'Phone': ('301-916-1439', '', 8),
+    'Service Hours': '',
+    'd plan serviceactivities': '',
+    'Text181': '',
+    'Advocacyprojectsrequire studentstolendtheirvoicesand talentsand isthe workofcitizenship': '',
+    'Check Box184': '',
+    'Check Box185': '',
+    'Check Box186': '',
+    'Text182': '',
+    'manyforms from essaystosmallgroupdiscussions': '',
+    'Text183': '',
+    'StudentSignature': '',
+    'Date': '',
+    'AdultSiteProjectSupervisorSignature': '',
+    'Date_2': '',
+    'PrincipalDesigneeSignature': '',
+    'Date_3': ''}
+
+
 # Montgomery:
 # Required section is 14-39 + Supervisor Signature
 moco_form = {
@@ -169,44 +245,20 @@ moco_form = {
              # Section III: Student reflection
              '40': ''
             }
-# Howard:
-fillpdfs.print_form_fields(config_params['HOWARD_SSL'])
-how_form = {'Name': '',
-    'School': '',
-    'Grade': '',
-    'Activity': '',
-    'Check Box187': '',
-    'Check Box188': '',
-    'Check Box189': '',
-    'StartDate': '',
-    'FinishDate': '',
-    'SponsoringClassOrganization': ('The Tacy Foundation', '', 8),
-    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '', 8),
-    'Phone': ('301-916-1439', '', 8),
-    'Service Hours': '',
-    'd plan serviceactivities': '',
-    'Text181': '',
-    'Advocacyprojectsrequire studentstolendtheirvoicesand talentsand isthe workofcitizenship': '',
-    'Check Box184': '',
-    'Check Box185': '',
-    'Check Box186': '',
-    'Text182': '',
-    'manyforms from essaystosmallgroupdiscussions': '',
-    'Text183': '',
-    'StudentSignature': '',
-    'Date': '',
-    'AdultSiteProjectSupervisorSignature': '',
-    'Date_2': '',
-    'PrincipalDesigneeSignature': '',
-    'Date_3': ''}
-# Georgetown Day School:
 
-# Carroll: No need to do extra, just send volunteer logs to students for them to enter via the online SSL form submitter: https://ext.carrollk12.org/SLHExt/Default.aspx
+# Our Lady of Good Counsel High School:
+# TODO: SSL doesn't have any forms that can be filled out - use annotations
+# Much more challenging due to multiple lines - will need to determine the number of pixels separating each line, also need to do this for different pages
+# reader = PdfReader(config_params["OLGC_SSL"])
+# fields = reader.get_fields()
+# print(fields)
 
 ## Virginia:
-# Fairfax: 
+# Fairfax:
+
 # Loudoun:
-#exit()
+
+# exit()
 
 
 # Load the Excel file that holds the SSL information
@@ -216,8 +268,8 @@ print(dataframe)
 dataframe['Confirmed'] = dataframe['Confirmed'].astype(str)
 dataframe.loc[dataframe.Confirmed == "nan", 'Confirmed'] = ""
 dataframe['Hours'] = round(dataframe['Hours'], 2)
-print(dataframe)
-print(dataframe.dtypes)
+# print(dataframe)
+# print(dataframe.dtypes)
 
 
 # TODO: grabbing only the SSL hours within the recommended time frame, or grab all eligible hours?
@@ -360,7 +412,6 @@ for e in v_emails:
 
             page = reader.pages[0]
             fields = reader.get_fields()
-            # print(fields)
 
             writer.append(reader)
 
