@@ -6,4 +6,5 @@ python-dateutil==2.9.0.post0
 openpyxl==3.1.2
 PyYAML==6.0.1
 python-dotenv==1.0.1
+yagmail==0.15.293
 # pypdf==4.2.0

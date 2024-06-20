@@ -16,6 +16,8 @@ import yaml # for loading the configurations related to the locations of the tem
 import os
 from dotenv import load_dotenv  # for accessing environment variables
 
+import yagmail # for simpler emailing experience
+
 # Import smtplib for the actual sending function
 import smtplib
 
@@ -79,6 +81,8 @@ def dataframe_to_pdf(df, filename, title, numpages=(1, 1), pagesize=(11, 8.5)):
             pdf.savefig(fig, bbox_inches='tight')
             
             plt.close()
+
+send_email = True
 
 ### SSL FORMS FOR DIFFERENT COUNTIES:
 
@@ -337,35 +341,40 @@ for e in v_emails:
             moco_form['2'] = f'{l_name}, {f_name}'
 
             # Calculate which time period this form will be - uses current date along with deadlines
-            
-            start_date=""
-            end_date=""
-            if today <= summer_end:
-                start_date = summer.strftime("%m/%d/%Y")
-                end_date = summer_end.strftime("%m/%d/%Y")
-            elif today <= new_year:
-                start_date = (summer_end+relativedelta(days=1)).strftime("%m/%d/%Y")
-                end_date = new_year.strftime("%m/%d/%Y")
-            elif today <= certificate:
-                start_date = (new_year+relativedelta(days=1)).strftime("%m/%d/%Y")
-                end_date = certificate.strftime("%m/%d/%Y")
-            elif today <= school_year:
-                start_date = (certificate+relativedelta(days=1)).strftime("%m/%d/%Y")
-                end_date = school_year.strftime("%m/%d/%Y")
-            else:
-                print("Current date not before any listed date...")
+            # calculate start date based on the earliest date in the list
+            vol_dates = [x.strftime("%m/%d/%Y") for x in email_df['Start Date']]
+
+            start_date=min(vol_dates)
+            end_date=max(vol_dates)
+            # start_date=""
+            # end_date=""
+            # if today <= summer_end:
+            #     start_date = summer.strftime("%m/%d/%Y")
+            #     end_date = summer_end.strftime("%m/%d/%Y")
+            # elif today <= new_year:
+            #     start_date = (summer_end+relativedelta(days=1)).strftime("%m/%d/%Y")
+            #     end_date = new_year.strftime("%m/%d/%Y")
+            # elif today <= certificate:
+            #     start_date = (new_year+relativedelta(days=1)).strftime("%m/%d/%Y")
+            #     end_date = certificate.strftime("%m/%d/%Y")
+            # elif today <= school_year:
+            #     start_date = (certificate+relativedelta(days=1)).strftime("%m/%d/%Y")
+            #     end_date = school_year.strftime("%m/%d/%Y")
+            # else:
+            #     print("Current date not before any listed date...")
             print(f'Start date: {start_date}')
             print(f'End_date: {end_date}')
-            moco_form['30'] = start_date
-            moco_form['31'] = end_date
+            # Need to cast as string, otherwise will throw Attribute errors since expecting string and not int or something else.
+            moco_form['30'] = str(start_date)
+            moco_form['31'] = str(end_date)
             # Enter the number of days
-            moco_form['32'] = nbr_days
+            moco_form['32'] = str(nbr_days)
             # Enter the number of hours earned
-            moco_form['34'] = total_ssl
+            moco_form['34'] = str(total_ssl)
             # Enter today's date
-            moco_form['37'] = today.month
-            moco_form['38'] = today.day
-            moco_form['39'] = today.year
+            moco_form['37'] = str(today.month)
+            moco_form['38'] = str(today.day)
+            moco_form['39'] = str(today.year)
             # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,moco_form)
 
             # Generate the PDFs
@@ -398,13 +407,14 @@ for e in v_emails:
             vol_dates = [x.strftime("%m/%d/%Y") for x in email_df['Start Date']]
 
             start_date=min(vol_dates)
-            end_date=today.strftime("%m/%d/%Y")
-            how_form['StartDate'] = tuple((start_date, '', 8))
-            how_form['FinishDate'] = tuple((end_date, '', 8))
+            end_date = max(vol_dates)
+            # end_date=today.strftime("%m/%d/%Y")
+            how_form['StartDate'] = tuple((str(start_date), '', 8))
+            how_form['FinishDate'] = tuple((str(end_date), '', 8))
             # Enter the number of hours earned
-            how_form['Service Hours'] = tuple((total_ssl, '', 8))
+            how_form['Service Hours'] = tuple((str(total_ssl), '', 8))
             # Enter today's date
-            how_form['Date_2'] = tuple((today.strftime("%m/%d/%Y"), '', 8))
+            how_form['Date_2'] = tuple((str(today.strftime("%m/%d/%Y")), '', 8))
             # fillpdfs.write_fillable_pdf(input_pdf,output_pdf,how_form)
 
             reader = PdfReader(input_pdf)
@@ -428,76 +438,114 @@ for e in v_emails:
         else:
             print(f"Don't have SSL PDF creation set up for {location}")
     
-    # Runs this regardless of whether or not they are eligible for SSL - mark their hours as signed and generated logs + email for them
-    # Create PDF with table of all the events attended by the individual
-    # When generating Event Logs, include non-SSL-eligible data.
-    email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
-    total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
-    f_name = email_df.loc[:,'First Name'].to_numpy()[0]
-    l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
-    export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
-    log_name = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
-    dataframe_to_pdf(export_df, log_name, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
-    print(f"Create logs for {f_name} {l_name}")
+    if send_email:
+        # Try using yagmail instead
+        # Runs this regardless of whether or not they are eligible for SSL - mark their hours as signed and generated logs + email for them
+        # Create PDF with table of all the events attended by the individual
+        # When generating Event Logs, include non-SSL-eligible data.
+        email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
+        total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
+        f_name = email_df.loc[:,'First Name'].to_numpy()[0]
+        l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
+        export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
+        ssl_logs = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
+        dataframe_to_pdf(export_df, ssl_logs, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
+        print(f"Create logs for {f_name} {l_name}")
+        sender = config_params["SENDER"]
+        password = os.getenv('PASSWORD')
+        receiver = e
+        files = [ssl_logs]
+        if True in eligible:
+            files.append(output_pdf)
 
-    # Define values to be used in email
-    text = f"""
-    Hi {f_name} {l_name},
+        text = f"""
+        Hi {f_name} {l_name},
 
-    Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
+        Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
 
-    Best,
+        Best,
 
-    SSL Manager
-    """
-    sender = config_params["SENDER"]
-    password = os.getenv('PASSWORD')
-    receiver = e
-
-    # Setting up the message
-    msg = MIMEMultipart()
-
-    msg['Subject'] = f'Tacy Foundation SSL Hours'
-    msg['From'] = sender
-    msg['To'] = receiver
-    msg['Bcc'] = receiver
-    msg['Message-ID'] = make_msgid()
-
-    msg.attach(MIMEText(text, "plain"))
-    
-    ssl_logs = log_name
-
-    files = [ssl_logs]
-    if True in eligible:
-        files.append(output_pdf)
-    # Loop through files to include in the email
-    for f in files:
-        # Open PDF file in binary mode
-        with open(f, "rb") as attachment:
-            # Add file as application/octet-stream
-            # Email client can usually download this automatically as attachment
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(attachment.read())
-
-        # Encode file in ASCII characters to send by email    
-        encoders.encode_base64(part)
-
-        # Add header as key/value pair to attachment part
-        part.add_header(
-            "Content-Disposition",
-            f"attachment; filename= {output_pdf}",
+        Mr. Pederesen
+        """
+        yag = yagmail.SMTP(sender, oauth2_file="oauth2.json")
+        yag.send(
+            to=receiver,
+            subject=f'Tacy Foundation SSL Hours',
+            contents=text, 
+            attachments=files,
         )
 
-        # Add attachment to message and convert message to string
-        msg.attach(part)
+    # if send_email:
+    #     # Runs this regardless of whether or not they are eligible for SSL - mark their hours as signed and generated logs + email for them
+    #     # Create PDF with table of all the events attended by the individual
+    #     # When generating Event Logs, include non-SSL-eligible data.
+    #     email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
+    #     total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
+    #     f_name = email_df.loc[:,'First Name'].to_numpy()[0]
+    #     l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
+    #     export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
+    #     log_name = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
+    #     dataframe_to_pdf(export_df, log_name, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
+    #     print(f"Create logs for {f_name} {l_name}")
 
-    context = ssl.create_default_context()
+    #     # Define values to be used in email
+    #     text = f"""
+    #     Hi {f_name} {l_name},
 
-    # Send the message via our own SMTP server.
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
-        smtp.login(sender, password)
-        smtp.sendmail(sender, receiver, msg.as_string())
-        smtp.quit()
+    #     Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
+
+    #     Best,
+
+    #     SSL Manager
+    #     """
+    #     sender = config_params["SENDER"]
+    #     password = os.getenv('PASSWORD')
+    #     receiver = e
+
+    #     # Setting up the message
+    #     msg = MIMEMultipart()
+
+    #     msg['Subject'] = f'Tacy Foundation SSL Hours'
+    #     msg['From'] = sender
+    #     msg['To'] = receiver
+    #     msg['Bcc'] = receiver
+    #     msg['Message-ID'] = make_msgid()
+
+    #     msg.attach(MIMEText(text, "plain"))
+        
+    #     ssl_logs = log_name
+
+    #     files = [ssl_logs]
+    #     if True in eligible:
+    #         files.append(output_pdf)
+    #     # Loop through files to include in the email
+    #     for f in files:
+    #         # Open PDF file in binary mode
+    #         with open(f, "rb") as attachment:
+    #             # Add file as application/octet-stream
+    #             # Email client can usually download this automatically as attachment
+    #             part = MIMEBase("application", "octet-stream")
+    #             part.set_payload(attachment.read())
+
+    #         # Encode file in ASCII characters to send by email    
+    #         encoders.encode_base64(part)
+
+    #         # Add header as key/value pair to attachment part
+    #         part.add_header(
+    #             "Content-Disposition",
+    #             f"attachment; filename= {output_pdf}",
+    #         )
+
+    #         # Add attachment to message and convert message to string
+    #         msg.attach(part)
+
+    #     context = ssl.create_default_context()
+
+    #     # Send the message via our own SMTP server.
+    #     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+    #         smtp.login(sender, password)
+    #         smtp.sendmail(sender, receiver, msg.as_string())
+    #         smtp.quit()
 
     # Edits spreadsheet - marks all the rows used in the calculation with "signed"
     for r in rows:

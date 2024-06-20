@@ -4,3 +4,4 @@ SSLEventLogs/*
 SSLForms/*
 SSLSheets/*
 !.gitignore
+oauth2.json
