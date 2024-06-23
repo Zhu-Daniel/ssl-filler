@@ -313,19 +313,25 @@ confirmed_col = 12
 # TODO: How should we name differently when volunteers have the same name? Just use email for the output pdfs?
 
 # Use emails as the partition key
-for e in v_emails:
-    print(f"Processing {e}")
-    email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['SSL eligible?'] == True) & (dataframe['Confirmed']=="")]
+for index,row in dataframe.iterrows():
+    e = row["Email"]
+    f_name = row["First Name"]
+    l_name = row["Last Name"]
+    print(f"Processing {f_name} {l_name} at {e}")
+    email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['First Name']==f_name) & (dataframe['Last Name']==l_name) & (dataframe['Confirmed']=="")]
+    # Skip forward if there is no information to process.
+    if email_df.empty:
+        continue
     rows = email_df.index
     eligible = email_df.loc[:,'SSL eligible?'].to_numpy()
     # Checks to see if the student is ever eligible or becomes eligible
     # Commented section for case where individual student wants an SSL form, but you don't want to run the program for everyone
     if True in eligible:
-        print(f"Creating SSL form for {e}")
+        print(f"Creating SSL form for {f_name} {l_name} at {e}")
         # TODO: only add up the hours which SSL is applicable and not confirmed
         total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
-        f_name = email_df.loc[:,'First Name'].to_numpy()[0]
-        l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
+        # f_name = email_df.loc[:,'First Name'].to_numpy()[0]
+        # l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
         print(f"Total SSL for {f_name} {l_name}: {total_ssl}")
         # Get number of days student volunteered
         nbr_days = np.unique(email_df.loc[:, 'Start Date'].to_numpy()).size
@@ -443,10 +449,10 @@ for e in v_emails:
         # Runs this regardless of whether or not they are eligible for SSL - mark their hours as signed and generated logs + email for them
         # Create PDF with table of all the events attended by the individual
         # When generating Event Logs, include non-SSL-eligible data.
-        email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
+        # email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
         total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
-        f_name = email_df.loc[:,'First Name'].to_numpy()[0]
-        l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
+        # f_name = email_df.loc[:,'First Name'].to_numpy()[0]
+        # l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
         export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
         ssl_logs = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
         dataframe_to_pdf(export_df, ssl_logs, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
@@ -465,9 +471,11 @@ for e in v_emails:
 
         Best,
 
-        Mr. Pederesen
+        Mr. Pedersen
         """
-        yag = yagmail.SMTP(sender, oauth2_file="oauth2.json")
+        # yag = yagmail.SMTP(sender, oauth2_file="oauth2.json")
+        # Send via password rather than Oauth2
+        yag = yagmail.SMTP(sender, os.getenv('PASSWORD'))
         yag.send(
             to=receiver,
             subject=f'Tacy Foundation SSL Hours',
