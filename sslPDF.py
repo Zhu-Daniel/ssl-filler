@@ -143,7 +143,7 @@ how_form = {'Name': '',
     'StartDate': '',
     'FinishDate': '',
     'SponsoringClassOrganization': ('The Tacy Foundation', '', 8),
-    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '', 8),
+    'AdultSiteProjectSupervisor': ('Richard Pedersen', '', 8),
     'Phone': ('301-916-1439', '', 8),
     'Service Hours': '',
     'd plan serviceactivities': '',
@@ -237,9 +237,9 @@ moco_form = {
              # Total # Hours Completed (award 1 SSL hour for every hour of service)
              '34': '', 
              # Supervisor Name (print)
-             '35': 'Charlotte Holliday', 
+             '35': 'Richard Pedersen', 
              # Title
-             '36': 'Founder and Executive Director', 
+             '36': 'President', 
              # Date (1)
              '37': '', 
              # Date (2)
