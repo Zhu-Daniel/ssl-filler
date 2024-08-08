@@ -143,7 +143,7 @@ how_form = {'Name': '',
     'StartDate': '',
     'FinishDate': '',
     'SponsoringClassOrganization': ('The Tacy Foundation', '', 8),
-    'AdultSiteProjectSupervisor': ('Richard Pedersen', '', 8),
+    'AdultSiteProjectSupervisor': ('Charlotte Holliday', '', 8),
     'Phone': ('301-916-1439', '', 8),
     'Service Hours': '',
     'd plan serviceactivities': '',
@@ -237,9 +237,9 @@ moco_form = {
              # Total # Hours Completed (award 1 SSL hour for every hour of service)
              '34': '', 
              # Supervisor Name (print)
-             '35': 'Richard Pedersen', 
+             '35': 'Charlotte Holliday', 
              # Title
-             '36': 'President', 
+             '36': 'Founder and Executive Director', 
              # Date (1)
              '37': '', 
              # Date (2)
@@ -352,6 +352,10 @@ for index,row in dataframe.iterrows():
 
             start_date=min(vol_dates)
             end_date=max(vol_dates)
+
+            with open('dates.txt', 'w') as f:
+                f.write(f'Start Date: {start_date}\n')
+                f.write(f'End Date: {end_date}\n')
             # start_date=""
             # end_date=""
             # if today <= summer_end:
@@ -444,116 +448,6 @@ for index,row in dataframe.iterrows():
         else:
             print(f"Don't have SSL PDF creation set up for {location}")
     
-    if send_email:
-        # Try using yagmail instead
-        # Runs this regardless of whether or not they are eligible for SSL - mark their hours as signed and generated logs + email for them
-        # Create PDF with table of all the events attended by the individual
-        # When generating Event Logs, include non-SSL-eligible data.
-        # email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
-        total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
-        # f_name = email_df.loc[:,'First Name'].to_numpy()[0]
-        # l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
-        export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
-        ssl_logs = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
-        dataframe_to_pdf(export_df, ssl_logs, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
-        print(f"Create logs for {f_name} {l_name}")
-        sender = config_params["SENDER"]
-        password = os.getenv('PASSWORD')
-        receiver = e
-        files = [ssl_logs]
-        if True in eligible:
-            files.append(output_pdf)
-
-        text = f"""
-        Hi {f_name} {l_name},
-
-        Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
-
-        Best,
-
-        Mr. Pedersen
-        """
-        # yag = yagmail.SMTP(sender, oauth2_file="oauth2.json")
-        # Send via password rather than Oauth2
-        yag = yagmail.SMTP(sender, os.getenv('PASSWORD'))
-        yag.send(
-            to=receiver,
-            subject=f'Tacy Foundation SSL Hours',
-            contents=text, 
-            attachments=files,
-        )
-
-    # if send_email:
-    #     # Runs this regardless of whether or not they are eligible for SSL - mark their hours as signed and generated logs + email for them
-    #     # Create PDF with table of all the events attended by the individual
-    #     # When generating Event Logs, include non-SSL-eligible data.
-    #     email_df = dataframe.loc[(dataframe['Email']==e) & (dataframe['Confirmed']=="")]
-    #     total_ssl = round(email_df.loc[:, 'Hours'].sum(), 2)
-    #     f_name = email_df.loc[:,'First Name'].to_numpy()[0]
-    #     l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
-    #     export_df = email_df[['Location','Start Date','Sign In', 'Sign Out', 'Hours']]
-    #     log_name = config_params['LOGS_PATH']+'/'+f'{e}EventLog.pdf'
-    #     dataframe_to_pdf(export_df, log_name, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
-    #     print(f"Create logs for {f_name} {l_name}")
-
-    #     # Define values to be used in email
-    #     text = f"""
-    #     Hi {f_name} {l_name},
-
-    #     Here are your SSL hours. If you have any questions about them, please contact the Tacy Foundation.
-
-    #     Best,
-
-    #     SSL Manager
-    #     """
-    #     sender = config_params["SENDER"]
-    #     password = os.getenv('PASSWORD')
-    #     receiver = e
-
-    #     # Setting up the message
-    #     msg = MIMEMultipart()
-
-    #     msg['Subject'] = f'Tacy Foundation SSL Hours'
-    #     msg['From'] = sender
-    #     msg['To'] = receiver
-    #     msg['Bcc'] = receiver
-    #     msg['Message-ID'] = make_msgid()
-
-    #     msg.attach(MIMEText(text, "plain"))
-        
-    #     ssl_logs = log_name
-
-    #     files = [ssl_logs]
-    #     if True in eligible:
-    #         files.append(output_pdf)
-    #     # Loop through files to include in the email
-    #     for f in files:
-    #         # Open PDF file in binary mode
-    #         with open(f, "rb") as attachment:
-    #             # Add file as application/octet-stream
-    #             # Email client can usually download this automatically as attachment
-    #             part = MIMEBase("application", "octet-stream")
-    #             part.set_payload(attachment.read())
-
-    #         # Encode file in ASCII characters to send by email    
-    #         encoders.encode_base64(part)
-
-    #         # Add header as key/value pair to attachment part
-    #         part.add_header(
-    #             "Content-Disposition",
-    #             f"attachment; filename= {output_pdf}",
-    #         )
-
-    #         # Add attachment to message and convert message to string
-    #         msg.attach(part)
-
-    #     context = ssl.create_default_context()
-
-    #     # Send the message via our own SMTP server.
-    #     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
-    #         smtp.login(sender, password)
-    #         smtp.sendmail(sender, receiver, msg.as_string())
-    #         smtp.quit()
 
     # Edits spreadsheet - marks all the rows used in the calculation with "signed"
     for r in rows:
