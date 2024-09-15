@@ -338,7 +338,7 @@ for index,row in dataframe.iterrows():
         # date_format = ["%m/%d/%y %H:%M:%S" for x in email_df.loc[:,'Date/Time'].size()]
         # TODO: what if student moves to a different county but still works with the Foundation? Just check last location?
         location = email_df.loc[:,'County'].iloc[-1]
-        output_pdf = config_params['SSL_PATH']+'/'+f'{e}{today}SSL.pdf'
+        output_pdf = config_params['SSL_PATH']+'/'+f'{f_name}{l_name}{today.year}{today.month}{today.day}SSL.pdf'
         print("Location: ", location)
         if location == "Montgomery":
             input_pdf = config_params['MONTGOMERY_SSL']
@@ -459,7 +459,7 @@ for index,row in dataframe.iterrows():
         # f_name = email_df.loc[:,'First Name'].to_numpy()[0]
         # l_name = email_df.loc[:,'Last Name'].to_numpy()[0]
         export_df = email_df[['Location','Date', 'Hours']]
-        ssl_logs = config_params['LOGS_PATH']+'/'+f'{e}{today}EventLog.pdf'
+        ssl_logs = config_params['LOGS_PATH']+'/'+f'{f_name}{l_name}{today.year}{today.month}{today.day}EventLog.pdf'
         dataframe_to_pdf(export_df, ssl_logs, f'Logs of Events attended by {f_name} {l_name} - {total_ssl} Hours of Service')
         print(f"Create logs for {f_name} {l_name}")
         sender = config_params["SENDER"]
